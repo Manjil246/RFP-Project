@@ -1,0 +1,1 @@
+ALTER TABLE "proposal_comparisons" ADD COLUMN "compared" boolean DEFAULT false NOT NULL;

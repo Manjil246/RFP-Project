@@ -1,0 +1,1 @@
+ALTER TABLE "rfp_vendors" ADD COLUMN "email_message_id" varchar(500);

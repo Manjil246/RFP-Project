@@ -1,0 +1,51 @@
+{
+  "name": "rfp-backend",
+  "version": "1.0.0",
+  "description": "AI-Powered RFP Management System Backend",
+  "author": {
+    "name": "Manjil Dhungana",
+    "email": "manjildhungana8@gmail.com"
+  },
+  "module": "src/server.ts",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "dev": "bun --watch src/server.ts",
+    "build": "bun build src/server.ts --outdir dist --target bun",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "bun run src/database/migrate.ts",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@ngrok/ngrok": "^1.6.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.44.7",
+    "express": "^4.19.2",
+    "express-async-errors": "^3.1.1",
+    "googleapis": "^144.0.0",
+    "mammoth": "^1.6.0",
+    "mailparser": "^3.6.5",
+    "nodemailer": "^6.9.16",
+    "openai": "^4.73.0",
+    "pdf-parse": "^1.1.1",
+    "xlsx": "^0.18.5",
+    "pg": "^8.12.0",
+    "postgres": "^3.4.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/mailparser": "^3.4.6",
+    "@types/node": "^20.14.1",
+    "@types/nodemailer": "^6.4.15",
+    "@types/pdf-parse": "^1.1.4",
+    "drizzle-kit": "^0.31.6",
+    "prettier": "^3.3.2",
+    "typescript": "^5.4.5"
+  }
+}
