@@ -190,18 +190,27 @@ export default function ProposalDetail() {
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
                 <div>
-                  <strong>Delivery Time:</strong> {extracted.deliveryTime}
+                  <strong>Delivery Time:</strong>{" "}
+                  {typeof extracted.deliveryTime === "object" ?
+                    JSON.stringify(extracted.deliveryTime)
+                  : String(extracted.deliveryTime)}
                 </div>
               </div>
             )}
             {extracted.paymentTerms && (
               <div>
-                <strong>Payment Terms:</strong> {extracted.paymentTerms}
+                <strong>Payment Terms:</strong>{" "}
+                {typeof extracted.paymentTerms === "object" ?
+                  JSON.stringify(extracted.paymentTerms)
+                : String(extracted.paymentTerms)}
               </div>
             )}
             {extracted.warranty && (
               <div>
-                <strong>Warranty:</strong> {extracted.warranty}
+                <strong>Warranty:</strong>{" "}
+                {typeof extracted.warranty === "object" ?
+                  JSON.stringify(extracted.warranty)
+                : String(extracted.warranty)}
               </div>
             )}
             {extracted.completenessScore !== undefined && (
@@ -267,7 +276,37 @@ export default function ProposalDetail() {
                             ([key, value]) => (
                               <div key={key}>
                                 <strong>{formatFieldName(key)}:</strong>{" "}
-                                {String(value)}
+                                {value === null || value === undefined ? (
+                                  "N/A"
+                                ) : typeof value === "object" && !Array.isArray(value) ? (
+                                  <div className="ml-2 mt-1 space-y-0.5">
+                                    {Object.entries(value as Record<string, any>).map(
+                                      ([subKey, subValue]) => (
+                                        <div key={subKey} className="text-xs">
+                                          <span className="font-medium">{subKey}:</span>{" "}
+                                          <span>
+                                            {typeof subValue === "object" && subValue !== null
+                                              ? JSON.stringify(subValue)
+                                              : String(subValue)}
+                                          </span>
+                                        </div>
+                                      ),
+                                    )}
+                                  </div>
+                                ) : Array.isArray(value) ? (
+                                  <div className="ml-2 mt-1 space-y-0.5">
+                                    {value.map((item, idx) => (
+                                      <div key={idx} className="text-xs">
+                                        •{" "}
+                                        {typeof item === "object" && item !== null
+                                          ? JSON.stringify(item)
+                                          : String(item)}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  String(value)
+                                )}
                               </div>
                             ),
                           )}
