@@ -420,9 +420,9 @@ export default function CompareDetail() {
                     <div className="h-3 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className={`h-3 rounded-full transition-all duration-500 ${
-                          isRecommended ? "bg-primary"
+                          isRecommended ? "bg-green-600"
                           : isLowest ? "bg-green-500"
-                          : "bg-muted-foreground/30"
+                          : "bg-green-400"
                         }`}
                         style={{ width: `${percentage}%` }}
                       />
@@ -655,14 +655,60 @@ export default function CompareDetail() {
                     </td>
                     {comparison.proposals.map((proposal) => {
                       const value = row.values[proposal.vendorId];
-                      const displayValue =
-                        value === null || value === undefined ? "Not specified"
-                        : (
-                          row.criteria === "Total Price" &&
-                          typeof value === "string"
-                        ) ?
-                          formatCurrency(value)
-                        : value.toString();
+                      let displayValue: string;
+                      
+                      if (value === null || value === undefined) {
+                        displayValue = "Not specified";
+                      } else if (
+                        row.criteria === "Total Price" &&
+                        typeof value === "string"
+                      ) {
+                        displayValue = formatCurrency(value);
+                      } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+                        // Handle objects - try to extract meaningful information
+                        try {
+                          // Check if it's a warranty object with duration/period
+                          const obj = value as any;
+                          if (obj.duration || obj.period || obj.length) {
+                            const duration = obj.duration || obj.period || obj.length;
+                            const unit = obj.unit || "years";
+                            displayValue = `${duration} ${unit}`;
+                          } else if (obj.value || obj.text || obj.description) {
+                            // Try common object properties
+                            displayValue = String(obj.value || obj.text || obj.description);
+                          } else {
+                            // Otherwise, format as key-value pairs
+                            const entries = Object.entries(value);
+                            if (entries.length > 0) {
+                              displayValue = entries
+                                .map(([key, val]) => {
+                                  if (val === null || val === undefined) return `${key}: N/A`;
+                                  if (typeof val === "object") return `${key}: ${JSON.stringify(val)}`;
+                                  return `${key}: ${String(val)}`;
+                                })
+                                .join(", ");
+                            } else {
+                              displayValue = "Not specified";
+                            }
+                          }
+                        } catch (e) {
+                          // Last resort: try to stringify
+                          try {
+                            displayValue = JSON.stringify(value);
+                          } catch {
+                            displayValue = "Not specified";
+                          }
+                        }
+                      } else if (Array.isArray(value)) {
+                        displayValue = value
+                          .map((item) => 
+                            typeof item === "object" ? JSON.stringify(item) : String(item)
+                          )
+                          .join(", ");
+                      } else {
+                        displayValue = String(value);
+                      }
+                      
                       const isWinner = row.winner === proposal.vendorId;
                       const isRecommended =
                         proposal.vendorId === recommendation.vendorId;

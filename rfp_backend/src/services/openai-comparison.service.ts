@@ -40,6 +40,71 @@ export class OpenAIComparisonService {
     );
 
     try {
+      // Helper to convert value to string if it's an object, otherwise return string or null
+      const toStringOrNull = (value: any): string | null => {
+        if (value === null || value === undefined) return null;
+        if (typeof value === "string") {
+          // If it's already a string, return it (but check for "[object Object]")
+          return value === "[object Object]" ? "Not specified" : value;
+        }
+        if (typeof value === "object") {
+          // If it's an object, try to convert it to a readable string
+          try {
+            // If it's an array, join the values
+            if (Array.isArray(value)) {
+              if (value.length === 0) return null;
+              return value.map(item => 
+                typeof item === "object" && item !== null ? JSON.stringify(item) : String(item)
+              ).join(", ");
+            }
+            // If it's an object, try to extract meaningful information
+            // Check if it has common warranty-related keys
+            if (value.duration || value.period || (value.length && typeof value.length === "number")) {
+              const duration = value.duration || value.period || value.length;
+              const unit = value.unit || "years";
+              return `${duration} ${unit}`;
+            }
+            // Check for other common object patterns
+            if (value.value) return String(value.value);
+            if (value.text) return String(value.text);
+            if (value.description) return String(value.description);
+            // Otherwise, try to stringify key-value pairs
+            const entries = Object.entries(value);
+            if (entries.length > 0) {
+              const formatted = entries
+                .slice(0, 5) // Limit to first 5 entries to avoid too long strings
+                .map(([key, val]) => {
+                  if (val === null || val === undefined) return `${key}: N/A`;
+                  if (typeof val === "object") {
+                    try {
+                      return `${key}: ${JSON.stringify(val)}`;
+                    } catch {
+                      return `${key}: [object]`;
+                    }
+                  }
+                  return `${key}: ${String(val)}`;
+                })
+                .join(", ");
+              return formatted || "Not specified";
+            }
+            // Empty object
+            return "Not specified";
+          } catch (e) {
+            // If all else fails, try JSON.stringify
+            try {
+              const jsonStr = JSON.stringify(value);
+              // Don't return "[object Object]" - return something more meaningful
+              return jsonStr === "{}" ? "Not specified" : jsonStr;
+            } catch {
+              return "Not specified";
+            }
+          }
+        }
+        // For other types (number, boolean, etc.), convert to string
+        const str = String(value);
+        return str === "[object Object]" ? "Not specified" : str;
+      };
+
       // Prepare proposal data for LLM
       const proposalsData = proposalsWithVendors.map(({ proposal, vendor }) => {
         const extracted = (proposal.extractedData as any) || {};
@@ -48,9 +113,9 @@ export class OpenAIComparisonService {
           vendorName: vendor.name,
           vendorEmail: vendor.email,
           totalPrice: extracted.totalPrice || null,
-          deliveryTime: extracted.deliveryTime || null,
-          paymentTerms: extracted.paymentTerms || null,
-          warranty: extracted.warranty || null,
+          deliveryTime: toStringOrNull(extracted.deliveryTime),
+          paymentTerms: toStringOrNull(extracted.paymentTerms),
+          warranty: toStringOrNull(extracted.warranty),
           lineItems: proposal.lineItems.map((item) => ({
             itemName: item.itemName,
             quantity: item.quantity,
@@ -231,16 +296,21 @@ CRITICAL:
         ({ proposal, vendor }) => {
           const extracted = (proposal.extractedData as any) || {};
           const gptProposal = gptProposalsMap.get(vendor.id);
+          // Ensure all fields are properly formatted (convert objects to strings)
+          const warrantyValue = toStringOrNull(extracted.warranty);
+          const deliveryTimeValue = toStringOrNull(extracted.deliveryTime);
+          const paymentTermsValue = toStringOrNull(extracted.paymentTerms);
           return {
             proposalId: proposal.id,
             vendorId: vendor.id,
             vendorName: vendor.name,
             vendorEmail: vendor.email,
             totalPrice: extracted.totalPrice || null,
-            deliveryTime: extracted.deliveryTime || null,
-            paymentTerms: extracted.paymentTerms || null,
-            warranty: extracted.warranty || null,
+            deliveryTime: deliveryTimeValue,
+            paymentTerms: paymentTermsValue,
+            warranty: warrantyValue,
             completenessScore: gptProposal?.completenessScore ?? null,
+            completenessScoreExplanation: gptProposal?.completenessScoreExplanation ?? null,
           };
         }
       );
@@ -257,7 +327,7 @@ CRITICAL:
       const parseDeliveryDays = (
         deliveryTime: string | null
       ): number | null => {
-        if (!deliveryTime) return null;
+        if (!deliveryTime || typeof deliveryTime !== "string") return null;
         const match = deliveryTime.match(/(\d+)\s*(day|week|month)/i);
         if (!match) return null;
         const num = parseInt(match[1]);
@@ -387,10 +457,17 @@ CRITICAL:
       const warrantyValues: Record<string, string | null> = {};
       const warrantyYearsValues: Record<string, number | null> = {};
       result.comparison.proposals.forEach((p) => {
-        warrantyValues[p.vendorId] = p.warranty;
+        // Ensure warranty is a string or null - use the same helper function
+        let warrantyStr = toStringOrNull(p.warranty);
+        // Double-check: if it's still an object (shouldn't happen, but safety check)
+        if (warrantyStr && typeof warrantyStr === "object") {
+          warrantyStr = JSON.stringify(warrantyStr);
+        }
+        // Ensure it's a string or null
+        warrantyValues[p.vendorId] = warrantyStr && typeof warrantyStr === "string" ? warrantyStr : null;
         // Try to parse warranty to years
-        if (p.warranty) {
-          const match = p.warranty.match(/(\d+)\s*(year|month)/i);
+        if (warrantyStr && typeof warrantyStr === "string") {
+          const match = warrantyStr.match(/(\d+)\s*(year|month)/i);
           if (match) {
             const num = parseInt(match[1]);
             const unit = match[2].toLowerCase();
@@ -403,11 +480,13 @@ CRITICAL:
           warrantyYearsValues[p.vendorId] = null;
         }
       });
-      if (Object.values(warrantyValues).some((v) => v !== null)) {
+      if (Object.values(warrantyValues).some((v) => v !== null && v !== undefined)) {
         // Parse RFP warranty requirement
-        const rfpWarrantyYears = rfp.warranty
+        const rfpWarrantyStr = toStringOrNull(rfp.warranty);
+        const rfpWarrantyYears = rfpWarrantyStr
           ? (() => {
-              const match = rfp.warranty.match(/(\d+)\s*(year|month)/i);
+              if (typeof rfpWarrantyStr !== "string") return null;
+              const match = rfpWarrantyStr.match(/(\d+)\s*(year|month)/i);
               if (match) {
                 const num = parseInt(match[1]);
                 const unit = match[2].toLowerCase();
@@ -417,9 +496,24 @@ CRITICAL:
             })()
           : null;
 
+        // Final safety check: ensure all values in warrantyValues are strings or null
+        const sanitizedWarrantyValues: Record<string, string | null> = {};
+        Object.entries(warrantyValues).forEach(([vendorId, value]) => {
+          if (value === null || value === undefined) {
+            sanitizedWarrantyValues[vendorId] = null;
+          } else if (typeof value === "string") {
+            sanitizedWarrantyValues[vendorId] = value;
+          } else if (typeof value === "object") {
+            // Last resort: convert object to string
+            sanitizedWarrantyValues[vendorId] = toStringOrNull(value);
+          } else {
+            sanitizedWarrantyValues[vendorId] = String(value);
+          }
+        });
+
         comparisonTable.push({
           criteria: "Warranty",
-          values: warrantyValues,
+          values: sanitizedWarrantyValues,
           winner: getNumericWinner(
             warrantyYearsValues,
             false, // Higher (longer) is better
