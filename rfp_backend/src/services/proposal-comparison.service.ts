@@ -69,20 +69,6 @@ export class ProposalComparisonService {
   }
 
   /**
-   * Compute hash for a proposal (for change detection)
-   */
-  private computeProposalHash(
-    proposal: Proposal & { lineItems: ProposalLineItem[] }
-  ): string {
-    const data = {
-      id: proposal.id,
-      updatedAt: proposal.updatedAt.toISOString(),
-      extractedData: proposal.extractedData,
-    };
-    return crypto.createHash("md5").update(JSON.stringify(data)).digest("hex");
-  }
-
-  /**
    * Get comparison for RFP (cached or generate new)
    */
   async getComparisonForRFP(rfpId: string): Promise<{
@@ -110,12 +96,6 @@ export class ProposalComparisonService {
     // Get existing comparison
     const existingComparison =
       await this.proposalComparisonRepository.getComparisonByRFPId(rfpId);
-
-    // Compute current proposal hashes
-    const currentHashes: Record<string, string> = {};
-    proposals.forEach((proposal) => {
-      currentHashes[proposal.id] = this.computeProposalHash(proposal);
-    });
 
     // Check if comparison exists and is up-to-date using compared flag
     if (existingComparison && existingComparison.compared) {
@@ -174,7 +154,7 @@ export class ProposalComparisonService {
       proposalIds: proposals.map((p) => p.id),
       comparisonData: comparison,
       recommendation,
-      proposalHashes: currentHashes,
+      proposalHashes: {}, // Empty object since we removed hash logic
       computedAt: new Date(),
     });
     console.log(`   ✅ Comparison saved successfully`);

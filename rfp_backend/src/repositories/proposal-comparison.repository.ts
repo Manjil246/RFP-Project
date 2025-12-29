@@ -30,7 +30,7 @@ export class ProposalComparisonRepository {
           proposalIds: comparison.proposalIds,
           comparisonData: comparison.comparisonData,
           recommendation: comparison.recommendation,
-          proposalHashes: comparison.proposalHashes,
+          proposalHashes: {}, // Empty object since we removed hash logic
           compared: true, // Mark as compared when updated
           computedAt: comparison.computedAt,
           updatedAt: new Date(),
