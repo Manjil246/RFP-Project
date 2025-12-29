@@ -7,7 +7,9 @@ import {
 } from "../models/proposal-comparison-model";
 
 export class ProposalComparisonRepository {
-  async getComparisonByRFPId(rfpId: string): Promise<ProposalComparison | null> {
+  async getComparisonByRFPId(
+    rfpId: string
+  ): Promise<ProposalComparison | null> {
     const [comparison] = await db
       .select()
       .from(proposalComparisons)
@@ -16,7 +18,9 @@ export class ProposalComparisonRepository {
     return comparison || null;
   }
 
-  async upsertComparison(comparison: NewProposalComparison): Promise<ProposalComparison> {
+  async upsertComparison(
+    comparison: NewProposalComparison
+  ): Promise<ProposalComparison> {
     const existing = await this.getComparisonByRFPId(comparison.rfpId);
 
     if (existing) {
@@ -58,39 +62,49 @@ export class ProposalComparisonRepository {
       })
       .where(eq(proposalComparisons.rfpId, rfpId))
       .returning({ id: proposalComparisons.id });
-    
+
     // If no comparison record exists yet, that's fine - it will be created when comparison is first run
     if (result.length === 0) {
-      console.log(`         ℹ️  No comparison record exists yet for RFP ${rfpId.substring(0, 8)}... (will be created on first comparison)`);
+      console.log(
+        `         ℹ️  No comparison record exists yet for RFP ${rfpId.substring(0, 8)}... (will be created on first comparison)`
+      );
     } else {
-      console.log(`         🔄 Marked comparison as stale for RFP ${rfpId.substring(0, 8)}...`);
+      console.log(
+        `         🔄 Marked comparison as stale for RFP ${rfpId.substring(0, 8)}...`
+      );
     }
   }
 
   /**
    * Get comparison status for multiple RFPs (for listing page)
    */
-  async getComparisonStatuses(rfpIds: string[]): Promise<Record<string, boolean>> {
+  async getComparisonStatuses(
+    rfpIds: string[]
+  ): Promise<Record<string, boolean>> {
     if (rfpIds.length === 0) return {};
-    
-    const comparisons = await db
+
+    const comparisons: Array<{
+      rfpId: string;
+      compared: boolean;
+    }> = await db
       .select({
         rfpId: proposalComparisons.rfpId,
         compared: proposalComparisons.compared,
       })
       .from(proposalComparisons)
       .where(inArray(proposalComparisons.rfpId, rfpIds));
-    
+
     const statusMap: Record<string, boolean> = {};
     comparisons.forEach((comp) => {
       statusMap[comp.rfpId] = comp.compared;
     });
-    
+
     return statusMap;
   }
 
   async deleteComparisonByRFPId(rfpId: string): Promise<void> {
-    await db.delete(proposalComparisons).where(eq(proposalComparisons.rfpId, rfpId));
+    await db
+      .delete(proposalComparisons)
+      .where(eq(proposalComparisons.rfpId, rfpId));
   }
 }
-

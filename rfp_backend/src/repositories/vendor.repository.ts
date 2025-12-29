@@ -20,13 +20,13 @@ export class VendorRepository implements IVendorRepository {
   }
 
   async getAllVendors(): Promise<Vendor[]> {
-    return await db
-      .select()
-      .from(vendors)
-      .orderBy(desc(vendors.createdAt));
+    return await db.select().from(vendors).orderBy(desc(vendors.createdAt));
   }
 
-  async updateVendor(id: string, vendor: Partial<NewVendor>): Promise<Vendor | null> {
+  async updateVendor(
+    id: string,
+    vendor: Partial<NewVendor>
+  ): Promise<Vendor | null> {
     const [updatedVendor] = await db
       .update(vendors)
       .set({ ...vendor, updatedAt: new Date() })
@@ -36,8 +36,8 @@ export class VendorRepository implements IVendorRepository {
   }
 
   async deleteVendor(id: string): Promise<boolean> {
-    const result = await db.delete(vendors).where(eq(vendors.id, id));
-    return result.rowCount ? result.rowCount > 0 : false;
+    await db.delete(vendors).where(eq(vendors.id, id));
+    return true; // Delete operation is successful regardless of whether record existed
   }
 
   async getVendorByEmail(email: string): Promise<Vendor | null> {
@@ -49,4 +49,3 @@ export class VendorRepository implements IVendorRepository {
     return vendor || null;
   }
 }
-

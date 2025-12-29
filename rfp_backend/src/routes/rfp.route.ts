@@ -3,7 +3,10 @@ import { RFPController } from "../controllers/rfp.controller";
 import { RFPService } from "../services/rfp.service";
 import { RFPRepository } from "../repositories/rfp.repository";
 import { VendorRepository } from "../repositories/vendor.repository";
-import { validateBody, validateParams } from "../middlewares/validationMiddleware";
+import {
+  validateBody,
+  validateParams,
+} from "../middlewares/validationMiddleware";
 import {
   createRFPSchema,
   updateRFPSchema,
@@ -36,11 +39,24 @@ export class RFPRoutes {
     // Get all RFPs
     this.router.get("/", this.rfpController.getAllRFPs);
 
+    // Get all RFPs with vendor counts (optimized for frontend)
+    this.router.get(
+      "/with-vendor-counts",
+      this.rfpController.getAllRFPsWithVendorCounts
+    );
+
     // Get RFP by ID
     this.router.get(
       "/:id",
       validateParams(getRFPByIdSchema.shape.params),
       this.rfpController.getRFPById
+    );
+
+    // Get RFP by ID with all vendors (optimized for frontend)
+    this.router.get(
+      "/:id/with-vendors",
+      validateParams(getRFPByIdSchema.shape.params),
+      this.rfpController.getRFPByIdWithAllVendors
     );
 
     // Update RFP
@@ -78,4 +94,3 @@ export class RFPRoutes {
     return this.router;
   }
 }
-

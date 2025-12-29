@@ -40,6 +40,32 @@ export interface GetRFPsResponse {
   data: (RFP & { lineItems: RFPLineItem[] })[];
 }
 
+export interface GetRFPsWithVendorCountsResponse {
+  success: boolean;
+  message: string;
+  data: (RFP & { lineItems: RFPLineItem[]; vendorCount: number })[];
+}
+
+export interface GetRFPWithAllVendorsResponse {
+  success: boolean;
+  message: string;
+  data: RFP & {
+    lineItems: RFPLineItem[];
+    sentVendors: Array<{
+      vendorId: string;
+      vendorName: string;
+      vendorEmail: string;
+      emailStatus: string;
+      emailSentAt: string | null;
+    }>;
+    allVendors: Array<{
+      id: string;
+      name: string;
+      email: string;
+    }>;
+  };
+}
+
 export interface Vendor {
   id: string;
   name: string;
@@ -114,6 +140,14 @@ class ApiClient {
 
   async getAllRFPs(): Promise<GetRFPsResponse> {
     return this.request<GetRFPsResponse>("/rfps");
+  }
+
+  async getAllRFPsWithVendorCounts(): Promise<GetRFPsWithVendorCountsResponse> {
+    return this.request<GetRFPsWithVendorCountsResponse>("/rfps/with-vendor-counts");
+  }
+
+  async getRFPByIdWithAllVendors(id: string): Promise<GetRFPWithAllVendorsResponse> {
+    return this.request<GetRFPWithAllVendorsResponse>(`/rfps/${id}/with-vendors`);
   }
 
   async getRFPById(id: string): Promise<CreateRFPResponse> {

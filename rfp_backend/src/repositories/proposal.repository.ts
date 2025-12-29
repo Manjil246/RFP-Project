@@ -58,7 +58,22 @@ export class ProposalRepository implements IProposalRepository {
       vendor: { id: string; name: string; email: string };
     })[]
   > {
-    const results = await db
+    const results: Array<{
+      id: string;
+      rfpId: string;
+      vendorId: string;
+      emailSubject: string | null;
+      emailBody: string | null;
+      emailMessageId: string | null;
+      extractedData: any;
+      rawAttachments: any;
+      parsedAt: Date | null;
+      createdAt: Date;
+      updatedAt: Date | null;
+      rfpTitle: string;
+      vendorName: string;
+      vendorEmail: string;
+    }> = await db
       .select({
         id: proposals.id,
         rfpId: proposals.rfpId,

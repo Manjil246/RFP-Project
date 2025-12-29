@@ -11,22 +11,20 @@ export interface DashboardStats {
 
 export class StatsService {
   async getDashboardStats(): Promise<DashboardStats> {
-    // Get counts using SQL count queries (more efficient than fetching all records)
-    const [rfpsCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(rfps);
+    // Execute all count queries in parallel for better performance
+    const [rfpsResult, vendorsResult, proposalsResult, comparisonsResult] =
+      await Promise.all([
+        db.select({ count: sql<number>`count(*)` }).from(rfps),
+        db.select({ count: sql<number>`count(*)` }).from(vendors),
+        db.select({ count: sql<number>`count(*)` }).from(proposals),
+        db.select({ count: sql<number>`count(*)` }).from(proposalComparisons),
+      ]);
 
-    const [vendorsCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(vendors);
-
-    const [proposalsCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(proposals);
-
-    const [comparisonsCount] = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(proposalComparisons);
+    // Extract counts from results (each query returns an array with one object)
+    const rfpsCount = rfpsResult[0];
+    const vendorsCount = vendorsResult[0];
+    const proposalsCount = proposalsResult[0];
+    const comparisonsCount = comparisonsResult[0];
 
     return {
       rfps: Number(rfpsCount.count) || 0,

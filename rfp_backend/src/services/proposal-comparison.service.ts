@@ -7,7 +7,6 @@ import { RFPRepository } from "../repositories/rfp.repository";
 import { OpenAIComparisonService } from "./openai-comparison.service";
 import { Proposal } from "../models/proposal-model";
 import { ProposalLineItem } from "../models/proposal-line-item-model";
-import { rfps, proposals, proposalComparisons } from "../models";
 
 export interface ComparisonData {
   proposals: Array<{

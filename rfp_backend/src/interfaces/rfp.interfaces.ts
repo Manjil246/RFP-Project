@@ -6,9 +6,32 @@ export interface IRFPRepository {
   createRFPLineItems(lineItems: NewRFPLineItem[]): Promise<RFPLineItem[]>;
   getRFPById(id: string): Promise<RFP | null>;
   getAllRFPs(): Promise<RFP[]>;
+  getAllRFPsWithVendorCounts(): Promise<
+    (RFP & { lineItems: RFPLineItem[]; vendorCount: number })[]
+  >;
+  getRFPWithLineItemsAndAllVendors(id: string): Promise<
+    | (RFP & {
+        lineItems: RFPLineItem[];
+        sentVendors: Array<{
+          vendorId: string;
+          vendorName: string;
+          vendorEmail: string;
+          emailStatus: string;
+          emailSentAt: string | null;
+        }>;
+        allVendors: Array<{
+          id: string;
+          name: string;
+          email: string;
+        }>;
+      })
+    | null
+  >;
   updateRFP(id: string, rfp: Partial<NewRFP>): Promise<RFP | null>;
   deleteRFP(id: string): Promise<boolean>;
-  getRFPWithLineItems(id: string): Promise<(RFP & { lineItems: RFPLineItem[] }) | null>;
+  getRFPWithLineItems(
+    id: string
+  ): Promise<(RFP & { lineItems: RFPLineItem[] }) | null>;
 }
 
 export interface IRFPService {
@@ -16,20 +39,50 @@ export interface IRFPService {
     naturalLanguageText: string
   ): Promise<RFP & { lineItems: RFPLineItem[] }>;
   getRFPById(id: string): Promise<(RFP & { lineItems: RFPLineItem[] }) | null>;
+  getRFPByIdWithAllVendors(id: string): Promise<
+    | (RFP & {
+        lineItems: RFPLineItem[];
+        sentVendors: Array<{
+          vendorId: string;
+          vendorName: string;
+          vendorEmail: string;
+          emailStatus: string;
+          emailSentAt: string | null;
+        }>;
+        allVendors: Array<{
+          id: string;
+          name: string;
+          email: string;
+        }>;
+      })
+    | null
+  >;
   getAllRFPs(): Promise<(RFP & { lineItems: RFPLineItem[] })[]>;
+  getAllRFPsWithVendorCounts(): Promise<
+    (RFP & { lineItems: RFPLineItem[]; vendorCount: number })[]
+  >;
   updateRFP(id: string, rfp: Partial<NewRFP>): Promise<RFP | null>;
   deleteRFP(id: string): Promise<boolean>;
-  sendRFPToVendors(rfpId: string, vendorIds: string[]): Promise<{
+  sendRFPToVendors(
+    rfpId: string,
+    vendorIds: string[]
+  ): Promise<{
     success: number;
     failed: number;
-    results: Array<{ vendorId: string; vendorName: string; success: boolean; error?: string }>;
+    results: Array<{
+      vendorId: string;
+      vendorName: string;
+      success: boolean;
+      error?: string;
+    }>;
   }>;
-  getRFPVendors(rfpId: string): Promise<Array<{
-    vendorId: string;
-    vendorName: string;
-    vendorEmail: string;
-    emailStatus: string;
-    emailSentAt: string | null;
-  }>>;
+  getRFPVendors(rfpId: string): Promise<
+    Array<{
+      vendorId: string;
+      vendorName: string;
+      vendorEmail: string;
+      emailStatus: string;
+      emailSentAt: string | null;
+    }>
+  >;
 }
-

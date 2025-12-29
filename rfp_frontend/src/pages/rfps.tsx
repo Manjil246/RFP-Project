@@ -37,22 +37,19 @@ export default function RFPs() {
   const loadRFPs = async () => {
     setLoadingRFPs(true);
     try {
-      const response = await apiClient.getAllRFPs();
+      // Use the optimized endpoint that includes vendor counts in a single query
+      const response = await apiClient.getAllRFPsWithVendorCounts();
       setRfps(response.data);
 
-      // Load vendors for each RFP
+      // Create vendor map from the vendorCount field (no additional API calls needed)
       const vendorsMap: Record<string, string[]> = {};
-      for (const rfp of response.data) {
-        try {
-          const vendorsResponse = await apiClient.getRFPVendors(rfp.id);
-          vendorsMap[rfp.id] = vendorsResponse.data
-            .filter((v) => v.emailStatus === "sent")
-            .map((v) => v.vendorId);
-        } catch (err) {
-          console.error(`Failed to load vendors for RFP ${rfp.id}:`, err);
-          vendorsMap[rfp.id] = [];
-        }
-      }
+      response.data.forEach((rfp) => {
+        // Parse vendorCount as number since it comes as string from database
+        const count = Number(rfp.vendorCount) || 0;
+        // Since we only need the count, we'll create an array with dummy IDs for display
+        // The actual count is what matters for the UI
+        vendorsMap[rfp.id] = Array(count).fill("vendor");
+      });
       setRfpVendorsMap(vendorsMap);
     } catch (err: any) {
       setError(err.message || "Failed to load RFPs");

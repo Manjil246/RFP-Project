@@ -51,26 +51,25 @@ export default function RFPDetail() {
   useEffect(() => {
     if (id) {
       loadRFP(id);
-      loadVendors();
+      // All vendors are now loaded with the RFP details - no separate call needed!
     }
   }, [id]);
 
   const loadRFP = async (rfpId: string) => {
     setLoading(true);
     try {
-      const response = await apiClient.getRFPById(rfpId);
+      // Use the optimized endpoint that includes all vendor information in a single call
+      const response = await apiClient.getRFPByIdWithAllVendors(rfpId);
       setRfp(response.data);
 
-      // Load vendors who already received this RFP
-      try {
-        const vendorsResponse = await apiClient.getRFPVendors(rfpId);
-        const sentIds = vendorsResponse.data
-          .filter((v) => v.emailStatus === "sent")
-          .map((v) => v.vendorId);
-        setSentVendorIds(sentIds);
-      } catch (err) {
-        console.error("Failed to load RFP vendors:", err);
-      }
+      // Extract sent vendor IDs from the included sent vendors data
+      const sentIds = response.data.sentVendors
+        .filter((v) => v.emailStatus === "sent")
+        .map((v) => v.vendorId);
+      setSentVendorIds(sentIds);
+
+      // Set all vendors for the send dialog (no separate API call needed!)
+      setVendors(response.data.allVendors);
     } catch (err: any) {
       setError(err.message || "Failed to load RFP");
     } finally {
@@ -78,22 +77,11 @@ export default function RFPDetail() {
     }
   };
 
-  const loadVendors = async () => {
-    setLoadingVendors(true);
-    try {
-      const response = await apiClient.getAllVendors();
-      setVendors(response.data);
-    } catch (err: any) {
-      console.error("Failed to load vendors:", err);
-    } finally {
-      setLoadingVendors(false);
-    }
-  };
-
   const handleOpenSendDialog = () => {
     setSelectedVendors([]);
     setShowSendDialog(true);
     setError(null);
+    // Vendors are already loaded with RFP details - no additional loading needed!
   };
 
   const handleSendRFP = async () => {
@@ -475,3 +463,4 @@ export default function RFPDetail() {
     </div>
   );
 }
+

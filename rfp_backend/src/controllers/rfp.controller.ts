@@ -85,6 +85,49 @@ export class RFPController {
     }
   };
 
+  getAllRFPsWithVendorCounts = async (req: Request, res: Response) => {
+    try {
+      const rfps = await this.rfpService.getAllRFPsWithVendorCounts();
+
+      return sendSuccessResponse(
+        res,
+        200,
+        "RFPs with vendor counts retrieved successfully",
+        rfps
+      );
+    } catch (error: any) {
+      console.error("Get all RFPs with vendor counts error:", error);
+      return sendErrorResponse(
+        res,
+        500,
+        error.message || "Failed to get RFPs with vendor counts",
+        error
+      );
+    }
+  };
+
+  getRFPByIdWithAllVendors = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const rfp = await this.rfpService.getRFPByIdWithAllVendors(id);
+
+      if (!rfp) {
+        return sendErrorResponse(res, 404, "RFP not found");
+      }
+
+      return sendSuccessResponse(res, 200, "RFP with all vendors retrieved successfully", rfp);
+    } catch (error: any) {
+      console.error("Get RFP with all vendors error:", error);
+      return sendErrorResponse(
+        res,
+        500,
+        error.message || "Failed to get RFP with all vendors",
+        error
+      );
+    }
+  };
+
   updateRFP = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;

@@ -29,9 +29,10 @@ export class RFPService implements IRFPService {
     naturalLanguageText: string
   ): Promise<RFP & { lineItems: RFPLineItem[] }> {
     // Extract structured data using OpenAI
-    const extractedData = await this.openAIService.extractRFPFromNaturalLanguage(
-      naturalLanguageText
-    );
+    const extractedData =
+      await this.openAIService.extractRFPFromNaturalLanguage(
+        naturalLanguageText
+      );
 
     // Create RFP record
     const newRFP: NewRFP = {
@@ -58,9 +59,8 @@ export class RFPService implements IRFPService {
       })
     );
 
-    const createdLineItems = await this.rfpRepository.createRFPLineItems(
-      newLineItems
-    );
+    const createdLineItems =
+      await this.rfpRepository.createRFPLineItems(newLineItems);
 
     return {
       ...createdRFP,
@@ -76,16 +76,47 @@ export class RFPService implements IRFPService {
 
   async getAllRFPs(): Promise<(RFP & { lineItems: RFPLineItem[] })[]> {
     const allRFPs = await this.rfpRepository.getAllRFPs();
-    
+
     // Get line items for each RFP
     const rfpsWithLineItems = await Promise.all(
       allRFPs.map(async (rfp) => {
-        const rfpWithItems = await this.rfpRepository.getRFPWithLineItems(rfp.id);
+        const rfpWithItems = await this.rfpRepository.getRFPWithLineItems(
+          rfp.id
+        );
         return rfpWithItems || { ...rfp, lineItems: [] };
       })
     );
 
     return rfpsWithLineItems;
+  }
+
+  async getAllRFPsWithVendorCounts(): Promise<
+    (RFP & { lineItems: RFPLineItem[]; vendorCount: number })[]
+  > {
+    return await this.rfpRepository.getAllRFPsWithVendorCounts();
+  }
+
+  async getRFPByIdWithAllVendors(
+    id: string
+  ): Promise<
+    | (RFP & {
+        lineItems: RFPLineItem[];
+        sentVendors: Array<{
+          vendorId: string;
+          vendorName: string;
+          vendorEmail: string;
+          emailStatus: string;
+          emailSentAt: string | null;
+        }>;
+        allVendors: Array<{
+          id: string;
+          name: string;
+          email: string;
+        }>;
+      })
+    | null
+  > {
+    return await this.rfpRepository.getRFPWithLineItemsAndAllVendors(id);
   }
 
   async updateRFP(id: string, rfp: Partial<NewRFP>): Promise<RFP | null> {
@@ -169,7 +200,7 @@ export class RFPService implements IRFPService {
           "sent",
           new Date()
         );
-        
+
         // Store message ID for matching replies
         if (messageId) {
           await this.rfpVendorRepository.updateEmailMessageId(
@@ -218,15 +249,18 @@ export class RFPService implements IRFPService {
     };
   }
 
-  async getRFPVendors(rfpId: string): Promise<Array<{
-    vendorId: string;
-    vendorName: string;
-    vendorEmail: string;
-    emailStatus: string;
-    emailSentAt: string | null;
-  }>> {
-    const rfpVendors = await this.rfpVendorRepository.getRFPVendorsByRFPId(rfpId);
-    
+  async getRFPVendors(rfpId: string): Promise<
+    Array<{
+      vendorId: string;
+      vendorName: string;
+      vendorEmail: string;
+      emailStatus: string;
+      emailSentAt: string | null;
+    }>
+  > {
+    const rfpVendors =
+      await this.rfpVendorRepository.getRFPVendorsByRFPId(rfpId);
+
     return rfpVendors.map((rv) => ({
       vendorId: rv.vendorId,
       vendorName: rv.vendor.name,
@@ -236,4 +270,3 @@ export class RFPService implements IRFPService {
     }));
   }
 }
-
